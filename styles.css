@@ -1,10 +1,69 @@
-:root {
+    .activity.activity-missing {
+      background: linear-gradient(to right, #ef4444, #fbbf24);
+      color: #fff;
+      border: 2px dashed #ef4444;
+    }
+
+    .activity.activity-missing input[type="text"] {
+      background: #fff8e1;
+      color: #ef4444;
+      font-weight: bold;
+      border: 1px solid #ef4444;
+    }
+    #missedActivitiesSection {
+      margin-top: 20px;
+      padding: 10px;
+      background: linear-gradient(111deg, #f8de9b, #ffd2d2);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+    }
+
+    /* Dashboard missing activities list */
+    #dashboardMissingList {
+      margin-top: 20px;
+      padding: 10px;
+      background: linear-gradient(90deg, #40d0da, #ef4488);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+    }
+
+    .missing-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      color: #ef4444;
+      text-align: left;
+    }
+
+    .missing-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+    }
+
+    .missing-item {
+      background: linear-gradient(90deg, #ef4444 60%, #fbbf24 100%);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
+    }
+
+    :root {
       --bg-light: #f0f4ff;
       --bg-dark: #1e293b;
       --text-light: #1e293b;
       --text-dark: #f8fafc;
     }
-body {
+
+    body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       background: var(--bg-light);
@@ -13,10 +72,12 @@ body {
       max-width: 100vw;
       overflow-x: hidden;
     }
+
     body.dark-mode {
       background: var(--bg-dark);
       color: var(--text-light);
     }
+
     .navbar {
       background: linear-gradient(90deg, #1e3a8a, #2563eb);
       color: white;
@@ -24,16 +85,19 @@ body {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
+
     .nav-brand {
       font-weight: bold;
       font-size: 20px;
     }
+
     .nav-tabs {
       display: flex;
       gap: 20px;
     }
+
     .nav-tabs a {
       color: white;
       text-decoration: none;
@@ -43,14 +107,17 @@ body {
       border-bottom: 2px solid transparent;
       padding-bottom: 2px;
     }
+
     .nav-tabs a:hover {
       opacity: 0.8;
       border-bottom: 2px solid #f0f4ff;
     }
+
     .nav-tabs a.active-tab {
       border-bottom: 2px solid #0bf551;
       color: #36f50b;
     }
+
     .theme-toggle {
       cursor: pointer;
       padding: 6px 12px;
@@ -58,32 +125,38 @@ body {
       color: #1e3a8a;
       border-radius: 8px;
     }
+
     .container {
       padding: 20px;
     }
+
     .day-box {
       /* border: 2px solid #1e3a8a; */
       border-radius: 15px;
       background: linear-gradient(to right, #97b0ff, #44557d);
       padding: 15px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       position: relative;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
+
     .day-box:hover {
       transform: translateY(-3px);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     }
+
     .day-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+
     .add-sub {
       display: flex;
       gap: 10px;
     }
+
     .activity {
       /* border: 2px solid #2563eb; */
       border-radius: 10px;
@@ -92,18 +165,23 @@ body {
       position: relative;
       transition: transform 0.2s;
     }
+
     .activity:hover {
       transform: scale(1.01);
     }
+
     .activity.activity-simple {
       background: linear-gradient(to right, #37388e, #69a9ff);
     }
+
     .activity.activity-sub {
       background: linear-gradient(to right, #10b981, #a3e635);
     }
+
     .activity.activity-starttime {
       background: linear-gradient(to right, #077a9d, #00cfff);
     }
+
     .activity .delete-btn {
       position: absolute;
       bottom: 10px;
@@ -117,13 +195,17 @@ body {
       font-size: 14px;
       z-index: 2;
     }
-    input[type="text"], input[type="time"], input[type="number"] {
+
+    input[type="text"],
+    input[type="time"],
+    input[type="number"] {
       margin: 5px;
       padding: 6px;
       border: 1px solid #ccc;
       border-radius: 5px;
       width: auto;
     }
+
     .add-day {
       font-size: 24px;
       width: 40px;
@@ -138,22 +220,27 @@ body {
       margin-top: 10px;
       transition: background 0.3s, transform 0.3s;
     }
+
     .add-day:hover {
       background-color: #e0e7ff;
       transform: scale(1.1);
     }
+
     .filters {
       margin: 20px 0;
     }
+
     .filters select {
       padding: 6px;
       margin-right: 10px;
       border-radius: 5px;
     }
+
     .tooltip {
       position: relative;
       display: inline-block;
     }
+
     .tooltip .tooltiptext {
       visibility: hidden;
       width: 160px;
@@ -170,97 +257,128 @@ body {
       opacity: 0;
       transition: opacity 0.3s;
     }
+
     .tooltip:hover .tooltiptext {
       visibility: visible;
       opacity: 1;
     }
+
     footer {
       text-align: center;
       padding: 10px;
       font-size: 14px;
       color: #666;
-}
+    }
 
-.add-day-top {
+    .add-day-top {
       margin-top: 0;
       margin-left: 10px;
       font-size: 28px;
       width: 44px;
       height: 44px;
       line-height: 40px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
 
-.theme-toggle {
+    .theme-toggle {
       font-size: 22px;
       display: flex;
       align-items: center;
       gap: 6px;
-}
+    }
 
-.profile-dp {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  border: 1px solid white;
-}
+    .profile-dp {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid white;
+    }
 
-@media (max-width: 600px) {
-  body {
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  .container {
-    padding: 8px;
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  .navbar {
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  .filters {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .filters select {
-    margin-top: 4px;
-  }
-  .day-box {
-    padding: 8px;
-    font-size: 15px;
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  .activity {
-    padding: 6px;
-    font-size: 14px;
-    max-width: 100vw;
-    overflow-x: hidden;
-    position: relative;
-  }
-  .activity .delete-btn {
-    position: static;
-    display: block;
-    margin-top: 6px;
-    margin-left: auto;
-    margin-right: 0;
-    width: fit-content;
-  }
-  .add-day {
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
-    line-height: 28px;
-  }
-  #dashboardChart {
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100vw !important;
-  }
-}
+    @media (max-width: 600px) {
+      .activity.activity-missing {
+        font-size: 13px;
+        padding: 5px;
+      }
+
+      .missing-title {
+        font-size: 16px;
+        margin-top: 12px;
+        margin-bottom: 6px;
+      }
+
+      .missing-list {
+        gap: 6px;
+      }
+
+      .missing-item {
+        font-size: 13px;
+        padding: 5px 10px;
+      }
+
+      body {
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .container {
+        padding: 8px;
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .navbar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .filters {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .filters select {
+        margin-top: 4px;
+      }
+
+      .day-box {
+        padding: 8px;
+        font-size: 15px;
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      .activity {
+        padding: 6px;
+        font-size: 14px;
+        max-width: 100vw;
+        overflow-x: hidden;
+        position: relative;
+      }
+
+      .activity .delete-btn {
+        position: static;
+        display: block;
+        margin-top: 6px;
+        margin-left: auto;
+        margin-right: 0;
+        width: fit-content;
+      }
+
+      .add-day {
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+        line-height: 28px;
+      }
+
+      #dashboardChart {
+        width: 100% !important;
+        height: auto !important;
+        max-width: 100vw !important;
+      }
+    }
