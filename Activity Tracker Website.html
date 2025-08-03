@@ -42,6 +42,12 @@
         </select>
       </div>
       <canvas id="dashboardChart" width="400" height="400" style="max-width:100%; height:auto; display:block; margin:auto;"></canvas>
+      <!-- Removed dashboardMissingList: missing activities card list no longer needed -->
+      <div id="missedActivitiesSection" style="margin-top:30px;">
+        <label for="missedDayFilter" style="font-weight:bold; color:#ef4444;">Select Day for Missed Activities:</label>
+        <select id="missedDayFilter" style="margin-left:10px; margin-bottom:10px;" onchange="renderMissedActivitiesChart()"></select>
+        <canvas id="missedActivitiesChart" width="400" height="200" style="max-width:100%; height:auto; display:block; margin:auto;"></canvas>
+      </div>
     </div>
   </div>
   <footer>© 2025 Pawan Gujar. All rights reserved.</footer>
