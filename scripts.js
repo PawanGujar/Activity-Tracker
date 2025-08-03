@@ -71,37 +71,57 @@ function loadData() {
     `;
     document.getElementById('days-container').appendChild(dayBox);
     for (const act of day.activities) {
+      let activityEl;
       if (act.type === 'startTime') {
-      } else if (act.type === 'missing') {
-        const missingDiv = document.createElement('div');
-        missingDiv.className = 'activity activity-missing';
-        missingDiv.innerHTML = `
-          <input type="text" placeholder="Missing Activity name" value="${act.name || ''}" />
-          <button class="delete-btn" onclick="this.parentElement.remove(); saveData();">Delete</button>
+        activityEl = document.createElement('div');
+        activityEl.className = 'activity activity-starttime';
+        activityEl.innerHTML = `
+          <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+          <input type="text" placeholder="Activity name" value="${act.name || ''}" readonly />
+          <input type="time" class="start-time-time" placeholder="Start Time" value="${act.startTime || ''}" disabled />
+          <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove()">Delete</button>
         `;
-        dayBox.appendChild(missingDiv);
-      } else if (act.startTime || act.endTime) {
-        const sub = document.createElement('div');
-        sub.className = 'activity activity-sub';
-        sub.innerHTML = `
-          <input type="text" placeholder="Activity name" value="${act.name}" />
-          <input type="time" class="start-time" value="${act.startTime}" />
-          <input type="time" class="end-time" value="${act.endTime}" />
-          <input type="text" class="time-spent" placeholder="Time Spent" value="${act.timeSpent}" readonly />
-          <button class="delete-btn" onclick="this.parentElement.remove()">Delete</button>
+        attachEditToggle(activityEl);
+      } else if (act.type === 'missing' || act.className === 'activity-missing') {
+        activityEl = document.createElement('div');
+        activityEl.className = 'activity activity-missing';
+        activityEl.innerHTML = `
+          <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+          <input type="text" placeholder="Missing Activity name" value="${act.name || ''}" readonly />
+          <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove(); saveData();">Delete</button>
         `;
-        dayBox.appendChild(sub);
-        attachTimeCalculation(sub);
+        attachEditToggle(activityEl);
+      } else if ((act.startTime && act.endTime) || act.type === 'sub') {
+        activityEl = document.createElement('div');
+        activityEl.className = 'activity activity-sub';
+        activityEl.innerHTML = `
+          <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+          <input type="text" placeholder="Activity name" value="${act.name || ''}" readonly />
+          <input type="time" class="start-time" value="${act.startTime || ''}" disabled />
+          <input type="time" class="end-time" value="${act.endTime || ''}" disabled />
+          <input type="text" class="time-spent" placeholder="Time Spent" value="${act.timeSpent || ''}" readonly />
+          <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove()">Delete</button>
+        `;
+        attachEditToggle(activityEl);
+        attachTimeCalculation(activityEl);
       } else {
-        const actDiv = document.createElement('div');
-        actDiv.className = 'activity activity-simple';
-        actDiv.innerHTML = `
-          <input type="text" placeholder="Activity name" value="${act.name}" />
-          <input type="time" class="time-spent" placeholder="Time Spent(e.g. 00:30 mins)" value="${act.timeSpent}" />
-          <input type="number" class="repeat-count" placeholder="Repeated count" min="1" value="${act.repeatCount}" />
-          <button class="delete-btn" onclick="this.parentElement.remove()">Delete</button>
+        activityEl = document.createElement('div');
+        activityEl.className = 'activity activity-simple';
+        activityEl.innerHTML = `
+          <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+          <input type="text" placeholder="Activity name" value="${act.name || ''}" readonly />
+          <input type="time" class="time-spent" placeholder="Time Spent(e.g. 00:30 mins)" value="${act.timeSpent || ''}" disabled />
+          <input type="number" class="repeat-count" placeholder="Repeated count" min="1" value="${act.repeatCount || ''}" readonly />
+          <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove()">Delete</button>
         `;
-        dayBox.appendChild(actDiv);
+        attachEditToggle(activityEl);
+      }
+      if (activityEl) {
+        if (dayBox.children.length > 2) {
+          dayBox.insertBefore(activityEl, dayBox.children[2]);
+        } else {
+          dayBox.appendChild(activityEl);
+        }
       }
     }
   }
@@ -223,13 +243,21 @@ function addSubActivity(dayId) {
   const sub = document.createElement('div');
   sub.className = 'activity activity-sub';
   sub.innerHTML = `
-        <input type="text" placeholder="Activity name" />
-        <input type="time" class="start-time" />
-        <input type="time" class="end-time" />
-        <input type="text" class="time-spent" placeholder="Time Spent" readonly />
-        <button class="delete-btn" onclick="this.parentElement.remove()">Delete</button>
-      `;
-  dayBox.appendChild(sub);
+    <span class="activity-type-icon" title="Created from ➕" style="margin-right:6px; font-size:18px;">➕</span>
+    <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+    <input type="text" placeholder="Activity name" readonly />
+    <input type="time" class="start-time" disabled />
+    <input type="time" class="end-time" disabled />
+    <input type="text" class="time-spent" placeholder="Time Spent" readonly />
+    <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove()">Delete</button>
+  `;
+  attachEditToggle(sub);
+  if (dayBox.children.length > 2) {
+    // Insert after header and title (first two children)
+    dayBox.insertBefore(sub, dayBox.children[2]);
+  } else {
+    dayBox.appendChild(sub);
+  }
   attachTimeCalculation(sub);
   saveData();
 }
@@ -239,12 +267,19 @@ function addSimpleActivity(dayId) {
   const act = document.createElement('div');
   act.className = 'activity activity-simple';
   act.innerHTML = `
-        <input type="text" placeholder="Activity name" />
-        <input type="time" class="time-spent" placeholder="Time Spent (hh:mm)" />
-        <input type="number" class="repeat-count" placeholder="Repeated count" min="1" />
-        <button class="delete-btn" onclick="this.parentElement.remove()">Delete</button>
-      `;
-  dayBox.appendChild(act);
+    <span class="activity-type-icon" title="Created from 📝" style="margin-right:6px; font-size:18px;">📝</span>
+    <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+    <input type="text" placeholder="Activity name" readonly />
+    <input type="time" class="time-spent" placeholder="Time Spent (hh:mm)" disabled />
+    <input type="number" class="repeat-count" placeholder="Repeated count" min="1" readonly />
+    <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove()">Delete</button>
+  `;
+  attachEditToggle(act);
+  if (dayBox.children.length > 2) {
+    dayBox.insertBefore(act, dayBox.children[2]);
+  } else {
+    dayBox.appendChild(act);
+  }
   saveData();
 }
 
@@ -254,11 +289,18 @@ function addStartTimeActivity(dayId) {
   const act = document.createElement('div');
   act.className = 'activity activity-starttime';
   act.innerHTML = `
-    <input type="text" placeholder="Activity name" />
-    <input type="time" class="start-time-time" placeholder="Start Time" />
-    <button class="delete-btn" onclick="this.parentElement.remove()">Delete</button>
+    <span class="activity-type-icon" title="Created from ⏰" style="margin-right:6px; font-size:18px;">⏰</span>
+    <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+    <input type="text" placeholder="Activity name" readonly />
+    <input type="time" class="start-time-time" placeholder="Start Time" disabled />
+    <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove()">Delete</button>
   `;
-  dayBox.appendChild(act);
+  attachEditToggle(act);
+  if (dayBox.children.length > 2) {
+    dayBox.insertBefore(act, dayBox.children[2]);
+  } else {
+    dayBox.appendChild(act);
+  }
   saveData();
 }
 
@@ -267,12 +309,64 @@ function addMissingActivity(dayId) {
   const act = document.createElement('div');
   act.className = 'activity activity-missing';
   act.innerHTML = `
-    <input type="text" placeholder="Missing Activity name" />
-    <button class="delete-btn" onclick="this.parentElement.remove(); saveData();">Delete</button>
+    <span class="activity-type-icon" title="Created from Missed" style="margin-right:6px; font-size:18px;">🚫</span>
+    <span class="edit-btn" title="Edit Activity" style="cursor:pointer; margin-right:8px; font-size:18px;">✏️</span>
+    <input type="text" placeholder="Missing Activity name" readonly />
+    <button class="delete-btn" style="display:none;" onclick="this.parentElement.remove(); saveData();">Delete</button>
   `;
-  dayBox.appendChild(act);
+  attachEditToggle(act);
+  if (dayBox.children.length > 2) {
+    dayBox.insertBefore(act, dayBox.children[2]);
+  } else {
+    dayBox.appendChild(act);
+  }
   saveData();
 }
+
+// Attach edit toggle logic to activity element
+function attachEditToggle(activityEl) {
+  const editBtn = activityEl.querySelector('.edit-btn');
+  const deleteBtn = activityEl.querySelector('.delete-btn');
+  const inputs = activityEl.querySelectorAll('input, select');
+  let editable = false;
+  editBtn.addEventListener('click', function() {
+    editable = !editable;
+    if (editable) {
+      // Enable all inputs except time-spent (for sub)
+      inputs.forEach(input => {
+        if (input.classList.contains('time-spent') && activityEl.classList.contains('activity-sub')) {
+          input.readOnly = true;
+          input.disabled = true;
+        } else {
+          input.readOnly = false;
+          input.disabled = false;
+        }
+      });
+      if (deleteBtn) deleteBtn.style.display = '';
+      activityEl.classList.add('editing');
+    } else {
+      // Disable all inputs
+      inputs.forEach(input => {
+        input.readOnly = true;
+        input.disabled = true;
+      });
+      if (deleteBtn) deleteBtn.style.display = 'none';
+      activityEl.classList.remove('editing');
+    }
+  });
+  // Initial state: not editable
+  inputs.forEach(input => {
+    input.readOnly = true;
+    input.disabled = true;
+  });
+  if (deleteBtn) deleteBtn.style.display = 'none';
+}
+  if (dayBox.children.length > 2) {
+    dayBox.insertBefore(act, dayBox.children[2]);
+  } else {
+    dayBox.appendChild(act);
+  }
+  saveData();
 
 function attachTimeCalculation(activityEl) {
   const start = activityEl.querySelector('.start-time');
@@ -317,17 +411,20 @@ function attachTimeCalculation(activityEl) {
 function renderDashboardChart() {
   if (!window.chartInstance) window.chartInstance = null;
   const chartRange = document.getElementById('chartRange')?.value || 'day';
-  const selectedDay = document.getElementById('dayFilter')?.value;
+  const selectedDay = document.getElementById('dayFilter')?.value || Object.keys(dayTitles)[0];
   const selectedMetric = document.getElementById('metricFilter')?.value;
   if (!selectedDay) return;
 
   let activities = [];
   let missingActivities = [];
+  let totalMinutes = 0;
   if (chartRange === 'day') {
     // Get activities for the selected day from DOM
     const dayBox = document.getElementById(selectedDay);
     if (!dayBox) return;
     const activityEls = dayBox.querySelectorAll('.activity');
+    // Aggregate activities by name
+    const activityMap = {};
     activityEls.forEach(el => {
       if (el.classList.contains('activity-missing')) {
         // Collect missing activities for the list
@@ -361,10 +458,31 @@ function renderDashboardChart() {
           if (!isNaN(mins)) timeSpent = mins;
         }
       }
-      if (name) activities.push({ name, timeSpent, count });
+      totalMinutes += timeSpent * count;
+      if (name) {
+        if (!activityMap[name]) {
+          activityMap[name] = { name, timeSpent: 0, count: 0 };
+        }
+        activityMap[name].timeSpent += timeSpent;
+        activityMap[name].count += count;
+      }
     });
+    activities = Object.values(activityMap);
     // Remove duplicate missing activities
     missingActivities = [...new Set(missingActivities)];
+    // Show total time spent above chart
+    const totalTimeDiv = document.getElementById('totalTimeSpent');
+    if (totalTimeDiv) {
+      if (selectedMetric === 'time') {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        totalTimeDiv.textContent = `Total Time Spent: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} hrs`;
+      } else {
+        totalTimeDiv.textContent = '';
+      }
+    }
+    // Render missing activities chart for selected day
+    renderMissedActivitiesChart(selectedDay);
   } else {
     // Week or Month: aggregate activities from all days in the range
     const days = JSON.parse(localStorage.getItem('activityMonitorDays') || '[]');
@@ -523,7 +641,8 @@ function updateMissedDayFilter() {
 }
 
 function renderMissedActivitiesChart() {
-  const selectedDay = document.getElementById('missedDayFilter')?.value;
+  // Accept selectedDay as argument
+  let selectedDay = arguments.length > 0 ? arguments[0] : (document.getElementById('dayFilter')?.value || Object.keys(dayTitles)[0]);
   if (!selectedDay) return;
   const dayBox = document.getElementById(selectedDay);
   if (!dayBox) return;
