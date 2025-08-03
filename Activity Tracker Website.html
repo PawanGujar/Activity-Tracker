@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity Tracker App</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <div class="navbar">
+    <div class="nav-brand" style="display:flex; align-items:center; gap:10px;">
+      <img src="https://ui-avatars.com/api/?name=AT&background=1e3a8a&color=fff&size=40&rounded=true" alt="Profile" class="profile-dp" />
+      Activity Tracker
+    </div>
+    <div class="nav-tabs">
+      <a id="tab-home" onclick="showTab('home')">Home</a>
+      <a id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="add-day add-day-top" onclick="addDay()" title="Add Day">+</div>
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+      </div>
+    </div>
+  </div>
+  <div id="tabs">
+    <div id="home" class="container">
+      <div id="days-container"></div>
+    </div>
+    <div id="dashboard" class="container" style="display:none;">
+      <div class="filters">
+        <select id="chartRange" onchange="renderDashboardChart()">
+          <option value="day">Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+        </select>
+        <select id="dayFilter" onchange="renderDashboardChart()"></select>
+        <select id="metricFilter" onchange="renderDashboardChart()">
+          <option value="time">Time Spent</option>
+          <option value="count">Repeat Count</option>
+        </select>
+      </div>
+      <canvas id="dashboardChart" width="400" height="400" style="max-width:100%; height:auto; display:block; margin:auto;"></canvas>
+    </div>
+  </div>
+  <footer>© 2025 Pawan Gujar. All rights reserved.</footer>
+
+  <script src="scripts.js"></script>
+  <script>
+    // Ensure chart renders when dashboard tab is shown
+    const originalShowTab = window.showTab;
+    window.showTab = function(tab) {
+      originalShowTab(tab);
+      if (tab === 'dashboard') {
+        renderDashboardChart();
+      }
+      // Highlight active tab
+      document.getElementById('tab-home').classList.toggle('active-tab', tab === 'home');
+      document.getElementById('tab-dashboard').classList.toggle('active-tab', tab === 'dashboard');
+    };
+    // Set initial active tab
+    document.getElementById('tab-home').classList.add('active-tab');
+  </script>
+</body>
+</html>
