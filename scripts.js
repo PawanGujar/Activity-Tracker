@@ -11,11 +11,13 @@ function saveData() {
     const dateVal = dateInput ? dateInput.value : '';
     const activities = [];
     dayBox.querySelectorAll('.activity').forEach(act => {
-      // Detect start time activity (time input)
       if (act.querySelector('.start-time-time')) {
         const name = act.querySelector('input[type="text"]')?.value || '';
         const startTime = act.querySelector('.start-time-time')?.value || '';
         activities.push({ type: 'startTime', name, startTime });
+      } else if (act.classList.contains('activity-missing')) {
+        const name = act.querySelector('input[type="text"]')?.value || '';
+        activities.push({ type: 'missing', name });
       } else {
         const name = act.querySelector('input[type="text"]')?.value || '';
         const timeSpent = act.querySelector('.time-spent')?.value || '';
@@ -56,6 +58,10 @@ function loadData() {
           <span class="tooltiptext">Activity with start time (number)</span>
           </div>
           <div class="tooltip">
+            <button onclick="addMissingActivity('${day.id}')">❌</button>
+            <span class="tooltiptext">Missing Activity</span>
+          </div>
+          <div class="tooltip">
             <button onclick="deleteDay('${day.id}')">🗑️</button>
             <span class="tooltiptext">Delete day</span>
           </div>
@@ -66,14 +72,14 @@ function loadData() {
     document.getElementById('days-container').appendChild(dayBox);
     for (const act of day.activities) {
       if (act.type === 'startTime') {
-        const startTimeDiv = document.createElement('div');
-        startTimeDiv.className = 'activity activity-starttime';
-        startTimeDiv.innerHTML = `
-          <input type="text" placeholder="Activity name" value="${act.name || ''}" />
-          <input type="time" class="start-time-time" placeholder="Start Time" value="${act.startTime || ''}" />
-          <button class="delete-btn" onclick="this.parentElement.remove()">Delete</button>
+      } else if (act.type === 'missing') {
+        const missingDiv = document.createElement('div');
+        missingDiv.className = 'activity activity-missing';
+        missingDiv.innerHTML = `
+          <input type="text" placeholder="Missing Activity name" value="${act.name || ''}" />
+          <button class="delete-btn" onclick="this.parentElement.remove(); saveData();">Delete</button>
         `;
-        dayBox.appendChild(startTimeDiv);
+        dayBox.appendChild(missingDiv);
       } else if (act.startTime || act.endTime) {
         const sub = document.createElement('div');
         sub.className = 'activity activity-sub';
@@ -160,6 +166,10 @@ function addDay() {
             <span class="tooltiptext">Activity with start time (number)</span>
             </div>
             <div class="tooltip">
+              <button onclick="addMissingActivity('day-${dayCount}')">❌</button>
+              <span class="tooltiptext">Missing Activity</span>
+            </div>
+            <div class="tooltip">
               <button onclick="deleteDay('day-${dayCount}')">🗑️</button>
               <span class="tooltiptext">Delete day</span>
             </div>
@@ -205,6 +215,7 @@ function updateDayFilter() {
     option.textContent = title;
     filter.appendChild(option);
   }
+  updateMissedDayFilter();
 }
 
 function addSubActivity(dayId) {
@@ -251,6 +262,18 @@ function addStartTimeActivity(dayId) {
   saveData();
 }
 
+function addMissingActivity(dayId) {
+  const dayBox = document.getElementById(dayId);
+  const act = document.createElement('div');
+  act.className = 'activity activity-missing';
+  act.innerHTML = `
+    <input type="text" placeholder="Missing Activity name" />
+    <button class="delete-btn" onclick="this.parentElement.remove(); saveData();">Delete</button>
+  `;
+  dayBox.appendChild(act);
+  saveData();
+}
+
 function attachTimeCalculation(activityEl) {
   const start = activityEl.querySelector('.start-time');
   const end = activityEl.querySelector('.end-time');
@@ -292,174 +315,297 @@ function attachTimeCalculation(activityEl) {
   // ==============================================  
 }
 function renderDashboardChart() {
-if (!window.chartInstance) window.chartInstance = null;
-const chartRange = document.getElementById('chartRange')?.value || 'day';
-const selectedDay = document.getElementById('dayFilter')?.value;
-const selectedMetric = document.getElementById('metricFilter')?.value;
-if (!selectedDay) return;
+  if (!window.chartInstance) window.chartInstance = null;
+  const chartRange = document.getElementById('chartRange')?.value || 'day';
+  const selectedDay = document.getElementById('dayFilter')?.value;
+  const selectedMetric = document.getElementById('metricFilter')?.value;
+  if (!selectedDay) return;
 
-let activities = [];
-if (chartRange === 'day') {
-  // Get activities for the selected day from DOM
-  const dayBox = document.getElementById(selectedDay);
-  if (!dayBox) return;
-  const activityEls = dayBox.querySelectorAll('.activity');
-  activityEls.forEach(el => {
-    const nameInput = el.querySelector('input[type="text"]');
-    const timeInput = el.querySelector('.time-spent');
-    const countInput = el.querySelector('.repeat-count');
-    let name = nameInput ? nameInput.value.trim() : '';
-    let timeSpent = 0;
-    let count = 1;
-    // Only use repeat count for simple activities (no start/end time)
-    if (countInput && countInput.value && el.querySelector('.start-time') === null && el.querySelector('.end-time') === null && el.querySelector('.start-time-time') === null) {
-      count = parseInt(countInput.value);
-      if (isNaN(count)) count = 1;
-    }
-    if (timeInput && timeInput.value) {
-      let val = timeInput.value.trim();
-      if (/\d{2}:\d{2}/.test(val)) {
-        let [h, m] = val.split(':');
-        h = parseInt(h);
-        m = parseInt(m);
-        timeSpent = h * 60 + m;
-      } else {
-        let mins = parseInt(val.replace(/[^\d]/g, ''));
-        if (!isNaN(mins)) timeSpent = mins;
+  let activities = [];
+  let missingActivities = [];
+  if (chartRange === 'day') {
+    // Get activities for the selected day from DOM
+    const dayBox = document.getElementById(selectedDay);
+    if (!dayBox) return;
+    const activityEls = dayBox.querySelectorAll('.activity');
+    activityEls.forEach(el => {
+      if (el.classList.contains('activity-missing')) {
+        // Collect missing activities for the list
+        const nameInput = el.querySelector('input[type="text"]');
+        let name = nameInput ? nameInput.value.trim() : '';
+        if (name) missingActivities.push(name);
+        // Do NOT include in pie chart
+        return;
+      }
+      // Only include non-missing activities in pie chart
+      const nameInput = el.querySelector('input[type="text"]');
+      const timeInput = el.querySelector('.time-spent');
+      const countInput = el.querySelector('.repeat-count');
+      let name = nameInput ? nameInput.value.trim() : '';
+      let timeSpent = 0;
+      let count = 1;
+      // Only use repeat count for simple activities (no start/end time)
+      if (countInput && countInput.value && el.querySelector('.start-time') === null && el.querySelector('.end-time') === null && el.querySelector('.start-time-time') === null) {
+        count = parseInt(countInput.value);
+        if (isNaN(count)) count = 1;
+      }
+      if (timeInput && timeInput.value) {
+        let val = timeInput.value.trim();
+        if (/\d{2}:\d{2}/.test(val)) {
+          let [h, m] = val.split(':');
+          h = parseInt(h);
+          m = parseInt(m);
+          timeSpent = h * 60 + m;
+        } else {
+          let mins = parseInt(val.replace(/[^\d]/g, ''));
+          if (!isNaN(mins)) timeSpent = mins;
+        }
+      }
+      if (name) activities.push({ name, timeSpent, count });
+    });
+    // Remove duplicate missing activities
+    missingActivities = [...new Set(missingActivities)];
+  } else {
+    // Week or Month: aggregate activities from all days in the range
+    const days = JSON.parse(localStorage.getItem('activityMonitorDays') || '[]');
+    let targetDate = null;
+    for (const d of days) {
+      if (d.id === selectedDay) {
+        targetDate = d.date;
+        break;
       }
     }
-    if (name) activities.push({ name, timeSpent, count });
-  });
-} else {
-  // Week or Month: aggregate activities from all days in the range
-  const days = JSON.parse(localStorage.getItem('activityMonitorDays') || '[]');
-  let targetDate = null;
-  for (const d of days) {
-    if (d.id === selectedDay) {
-      targetDate = d.date;
-      break;
+    if (!targetDate) return;
+    let target = new Date(targetDate);
+    let start, end;
+    if (chartRange === 'week') {
+      // Get week range (Sunday to Saturday)
+      let dayOfWeek = target.getDay();
+      start = new Date(target);
+      start.setDate(target.getDate() - dayOfWeek);
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+    } else {
+      // Month range
+      start = new Date(target.getFullYear(), target.getMonth(), 1);
+      end = new Date(target.getFullYear(), target.getMonth() + 1, 0);
     }
-  }
-  if (!targetDate) return;
-  let target = new Date(targetDate);
-  let start, end;
-  if (chartRange === 'week') {
-    // Get week range (Sunday to Saturday)
-    let dayOfWeek = target.getDay();
-    start = new Date(target);
-    start.setDate(target.getDate() - dayOfWeek);
-    end = new Date(start);
-    end.setDate(start.getDate() + 6);
-  } else {
-    // Month range
-    start = new Date(target.getFullYear(), target.getMonth(), 1);
-    end = new Date(target.getFullYear(), target.getMonth() + 1, 0);
-  }
-  // Aggregate activities
-  let activityMap = {};
-  let daysInRange = 0;
-  for (const d of days) {
-    let dDate = new Date(d.date);
-    if (dDate >= start && dDate <= end) {
-      daysInRange++;
-      for (const act of d.activities) {
-        let name = act.name || '';
-        let timeSpent = 0;
-        let count = 1;
-        if (act.timeSpent) {
-          let val = act.timeSpent.trim();
-          if (/\d{2}:\d{2}/.test(val)) {
-            let [h, m] = val.split(':');
-            h = parseInt(h);
-            m = parseInt(m);
-            timeSpent = h * 60 + m;
-          } else {
-            let mins = parseInt(val.replace(/[^\d]/g, ''));
-            if (!isNaN(mins)) timeSpent = mins;
+    // Aggregate activities
+    let activityMap = {};
+    let daysInRange = 0;
+    for (const d of days) {
+      let dDate = new Date(d.date);
+      if (dDate >= start && dDate <= end) {
+        daysInRange++;
+        for (const act of d.activities) {
+          let name = act.name || '';
+          let timeSpent = 0;
+          let count = 1;
+          if (act.timeSpent) {
+            let val = act.timeSpent.trim();
+            if (/\d{2}:\d{2}/.test(val)) {
+              let [h, m] = val.split(':');
+              h = parseInt(h);
+              m = parseInt(m);
+              timeSpent = h * 60 + m;
+            } else {
+              let mins = parseInt(val.replace(/[^\d]/g, ''));
+              if (!isNaN(mins)) timeSpent = mins;
+            }
+          }
+          if (act.repeatCount) {
+            count = parseInt(act.repeatCount);
+            if (isNaN(count)) count = 1;
+          }
+          if (name) {
+            if (!activityMap[name]) activityMap[name] = { name, timeSpent: 0, count: 0 };
+            activityMap[name].timeSpent += timeSpent;
+            activityMap[name].count += count;
           }
         }
-        if (act.repeatCount) {
-          count = parseInt(act.repeatCount);
-          if (isNaN(count)) count = 1;
-        }
-        if (name) {
-          if (!activityMap[name]) activityMap[name] = { name, timeSpent: 0, count: 0 };
-          activityMap[name].timeSpent += timeSpent;
-          activityMap[name].count += count;
-        }
       }
     }
+    // If not enough days for week (7) or month (28+), show empty pie
+    if ((chartRange === 'week' && daysInRange < 7) || (chartRange === 'month' && daysInRange < 28)) {
+      activities = [{ name: 'No Data', timeSpent: 0, count: 0 }];
+    } else {
+      activities = Object.values(activityMap);
+    }
   }
-  // If not enough days for week (7) or month (28+), show empty pie
-  if ((chartRange === 'week' && daysInRange < 7) || (chartRange === 'month' && daysInRange < 28)) {
-    activities = [{ name: 'No Data', timeSpent: 0, count: 0 }];
+
+  const labels = activities.map(a => a.name);
+  let data;
+  if (selectedMetric === 'time') {
+    data = activities.map(a => a.timeSpent);
   } else {
-    activities = Object.values(activityMap);
+    data = activities.map(a => a.count > 1 ? a.count : 0);
   }
-}
 
-const labels = activities.map(a => a.name);
-let data;
-if (selectedMetric === 'time') {
-  data = activities.map(a => a.timeSpent);
-} else {
-  // Only show count for simple activities (with repeat count > 1), others are 0
-  data = activities.map(a => {
-    // If activity has a repeat count > 1, use it, else 0
-    return a.count > 1 ? a.count : 0;
-  });
-}
+  // Color palette for pie slices
+  const pieColors = [
+    '#60a5fa', '#f59e0b', '#10b981', '#ef4444', '#6366f1', '#f472b6', '#34d399', '#f87171', '#a3e635', '#fbbf24', '#818cf8', '#facc15', '#e879f9', '#38bdf8', '#fb7185', '#a7f3d0', '#fde68a', '#c7d2fe', '#fcd34d', '#f3f4f6'
+  ];
+  const backgroundColor = labels.map((_, i) => pieColors[i % pieColors.length]);
 
-// Color palette for pie slices
-const pieColors = [
-  '#60a5fa', '#f59e0b', '#10b981', '#ef4444', '#6366f1', '#f472b6', '#34d399', '#f87171', '#a3e635', '#fbbf24', '#818cf8', '#facc15', '#e879f9', '#38bdf8', '#fb7185', '#a7f3d0', '#fde68a', '#c7d2fe', '#fcd34d', '#f3f4f6'
-];
-const backgroundColor = labels.map((_, i) => pieColors[i % pieColors.length]);
+  if (window.chartInstance) window.chartInstance.destroy();
+  const ctx = document.getElementById('dashboardChart').getContext('2d');
 
-if (window.chartInstance) window.chartInstance.destroy();
-const ctx = document.getElementById('dashboardChart').getContext('2d');
-
-window.chartInstance = new Chart(ctx, {
-  type: 'pie',
-  data: {
-    labels: labels,
-    datasets: [{
-      label: selectedMetric === 'time' ? 'Time Spent (mins)' : 'Count',
-      data: data,
-      backgroundColor: backgroundColor,
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: { position: 'right', labels: { usePointStyle: true } },
-      title: {
-        display: true,
-        text: `Activity by ${selectedMetric === 'time' ? 'Time Spent' : 'Count'} (${chartRange.charAt(0).toUpperCase() + chartRange.slice(1)})`
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const idx = context.dataIndex;
-            const activity = activities[idx];
-            if (selectedMetric === 'time') {
-              let mins = activity.timeSpent;
-              let h = Math.floor(mins / 60);
-              let m = mins % 60;
-              return `${activity.name}: ${h} hrs : ${m} mins`;
-            } else {
-              // Only show count for simple activities (with repeat count)
-              if (activity.count > 1) {
-                return `${activity.name}: ${activity.count} times`;
+  window.chartInstance = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: selectedMetric === 'time' ? 'Time Spent (mins)' : 'Count',
+        data: data,
+        backgroundColor: backgroundColor,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right', labels: { usePointStyle: true } },
+        title: {
+          display: true,
+          text: `Activity by ${selectedMetric === 'time' ? 'Time Spent' : 'Count'} (${chartRange.charAt(0).toUpperCase() + chartRange.slice(1)})`
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const idx = context.dataIndex;
+              const activity = activities[idx];
+              if (selectedMetric === 'time') {
+                let mins = activity.timeSpent;
+                let h = Math.floor(mins / 60);
+                let m = mins % 60;
+                return `${activity.name}: ${h} hrs : ${m} mins`;
               } else {
-                return `${activity.name}`;
+                // Only show count for simple activities (with repeat count)
+                if (activity.count > 1) {
+                  return `${activity.name}: ${activity.count} times`;
+                } else {
+                  return `${activity.name}`;
+                }
               }
             }
           }
         }
       }
     }
+  });
+
+  // Render missing activities below pie chart (only once, after pie chart)
+  const missingListDiv = document.getElementById('dashboardMissingList');
+  if (missingListDiv) {
+    if (missingActivities.length > 0) {
+      missingListDiv.innerHTML = `
+        <div class="missing-title">Missing Activities</div>
+        <ul class="missing-list">
+          ${missingActivities.map(name => `<li class="missing-item">${name}</li>`).join('')}
+        </ul>
+      `;
+    } else {
+      missingListDiv.innerHTML = '';
+    }
   }
-});
 }
+
+function updateMissedDayFilter() {
+  const filter = document.getElementById('missedDayFilter');
+  if (!filter) return;
+  filter.innerHTML = '';
+  for (const [id, title] of Object.entries(dayTitles)) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = title;
+    filter.appendChild(option);
+  }
+}
+
+function renderMissedActivitiesChart() {
+  const selectedDay = document.getElementById('missedDayFilter')?.value;
+  if (!selectedDay) return;
+  const dayBox = document.getElementById(selectedDay);
+  if (!dayBox) return;
+  // Collect missed activities for the selected day
+  const activityEls = dayBox.querySelectorAll('.activity.activity-missing');
+  const missedNames = [];
+  activityEls.forEach(el => {
+    const nameInput = el.querySelector('input[type="text"]');
+    let name = nameInput ? nameInput.value.trim() : '';
+    if (name) missedNames.push(name);
+  });
+  // Count occurrences (should be 1 per name, but future-proof)
+  const missedCountMap = {};
+  missedNames.forEach(name => {
+    missedCountMap[name] = (missedCountMap[name] || 0) + 1;
+  });
+  const labels = Object.keys(missedCountMap);
+  const data = Object.values(missedCountMap);
+  // Render chart
+  const ctx = document.getElementById('missedActivitiesChart').getContext('2d');
+  if (window.missedChartInstance) window.missedChartInstance.destroy();
+  window.missedChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Missed Activities',
+        data: data,
+        backgroundColor: '#ef4444',
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `Missed Activities (${labels.length})`
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, title: { display: true, text: 'Count' } },
+        y: { title: { display: true, text: 'Activity Name' } }
+      }
+    }
+  });
+}
+
+// Update missed day filter whenever days change
+function updateDayFilter() {
+  const filter = document.getElementById('dayFilter');
+  filter.innerHTML = '';
+  for (const [id, title] of Object.entries(dayTitles)) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = title;
+    filter.appendChild(option);
+  }
+  updateMissedDayFilter();
+}
+
+// Render missed activities chart on dashboard tab show
+function showTab(tab) {
+  document.getElementById('home').style.display = tab === 'home' ? 'block' : 'none';
+  document.getElementById('dashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
+  // Show/hide add day button in navbar
+  const addDayBtn = document.querySelector('.add-day-top');
+  if (addDayBtn) {
+    addDayBtn.style.display = tab === 'home' ? '' : 'none';
+  }
+  updateDayFilter();
+  if (tab === 'dashboard') {
+    renderMissedActivitiesChart();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  const themeIcon = document.getElementById('themeIcon');
+  if (themeIcon) {
+    themeIcon.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+  }
+  updateMissedDayFilter();
+  renderMissedActivitiesChart();
+});
