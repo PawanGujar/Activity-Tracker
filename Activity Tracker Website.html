@@ -41,11 +41,11 @@
           <option value="count">Repeat Count</option>
         </select>
       </div>
+      <div id="totalTimeSpent" style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px; color:#1e3a8a;"></div>
       <canvas id="dashboardChart" width="400" height="400" style="max-width:100%; height:auto; display:block; margin:auto;"></canvas>
       <!-- Removed dashboardMissingList: missing activities card list no longer needed -->
       <div id="missedActivitiesSection" style="margin-top:30px;">
-        <label for="missedDayFilter" style="font-weight:bold; color:#ef4444;">Select Day for Missed Activities:</label>
-        <select id="missedDayFilter" style="margin-left:10px; margin-bottom:10px;" onchange="renderMissedActivitiesChart()"></select>
+        <label style="font-weight:bold; color:#ef4444;">Missing Activities for Selected Day:</label>
         <canvas id="missedActivitiesChart" width="400" height="200" style="max-width:100%; height:auto; display:block; margin:auto;"></canvas>
       </div>
     </div>
@@ -67,6 +67,31 @@
     };
     // Set initial active tab
     document.getElementById('tab-home').classList.add('active-tab');
+
+    // Swipe gesture support for tab switching
+    let touchStartX = 0;
+    let touchEndX = 0;
+    function handleGesture() {
+      if (touchEndX < touchStartX - 50) {
+        // Swipe left: Home -> Dashboard
+        if (document.getElementById('home').style.display !== 'none') {
+          showTab('dashboard');
+        }
+      }
+      if (touchEndX > touchStartX + 50) {
+        // Swipe right: Dashboard -> Home
+        if (document.getElementById('dashboard').style.display !== 'none') {
+          showTab('home');
+        }
+      }
+    }
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+    document.addEventListener('touchend', function(e) {
+      touchEndX = e.changedTouches[0].screenX;
+      handleGesture();
+    });
   </script>
 </body>
 </html>
