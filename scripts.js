@@ -18,13 +18,17 @@ function saveData() {
       } else if (act.classList.contains('activity-missing')) {
         const name = act.querySelector('input[type="text"]')?.value || '';
         activities.push({ type: 'missing', name });
+      } else if (act.classList.contains('activity-sub')) {
+        const name = act.querySelector('input[type="text"]')?.value || '';
+        const timeSpent = act.querySelector('.time-spent')?.value || '';
+        const startTime = act.querySelector('.start-time')?.value || '';
+        const endTime = act.querySelector('.end-time')?.value || '';
+        activities.push({ type: 'sub', name, timeSpent, startTime, endTime });
       } else {
         const name = act.querySelector('input[type="text"]')?.value || '';
         const timeSpent = act.querySelector('.time-spent')?.value || '';
         const repeatCount = act.querySelector('.repeat-count')?.value || '';
-        const startTime = act.querySelector('.start-time')?.value || '';
-        const endTime = act.querySelector('.end-time')?.value || '';
-        activities.push({ name, timeSpent, repeatCount, startTime, endTime });
+        activities.push({ name, timeSpent, repeatCount });
       }
     });
     days.push({ id, title, date: dateVal, activities });
