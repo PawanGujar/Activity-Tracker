@@ -665,35 +665,22 @@ function renderMissedActivitiesChart() {
   });
   const labels = Object.keys(missedCountMap);
   const data = Object.values(missedCountMap);
-  // Render chart
-  const ctx = document.getElementById('missedActivitiesChart').getContext('2d');
-  if (window.missedChartInstance) window.missedChartInstance.destroy();
-  window.missedChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Missed Activities',
-        data: data,
-        backgroundColor: '#ef4444',
-        borderRadius: 8,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      plugins: {
-        legend: { display: false },
-        title: {
-          display: true,
-          text: `Missed Activities (${labels.length})`
-        }
-      },
-      scales: {
-        x: { beginAtZero: true, title: { display: true, text: 'Count' } },
-        y: { title: { display: true, text: 'Activity Name' } }
-      }
+  // Render cards instead of chart
+  const missedSection = document.getElementById('missedActivitiesSection');
+  if (missedSection) {
+    let html = '';
+    if (labels.length > 0) {
+      html += `<div class="missing-title">Missed Activities (${missedNames.length} total)</div>`;
+      html += '<div class="missing-list">';
+      labels.forEach((name, i) => {
+        html += `<div class="missing-item">${name} <span style="color:#ef4444; font-weight:bold;">(${missedCountMap[name]})</span></div>`;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="missing-title">No missed activities for this day.</div>';
     }
-  });
+    missedSection.innerHTML = html;
+  }
 }
 
 // Update missed day filter whenever days change
